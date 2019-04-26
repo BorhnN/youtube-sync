@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2016-2017 PotcFdk
+# Copyright 2016-2019 PotcFdk
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ function update_metadata {
 	ID="$1"
 	titlefile="$2"
 	descfile="$3"
-	
+
 	echo -n "Updating metadata: $ID..."
 	echo -n " [title"
-	
+
 	TITLE=$(youtube-dl --get-filename -o '%(title)s' -- "$ID");
 	if [ -z "$TITLE" ]; then
 		echo -n ":Error] Empty title. Video might be down. We'll keep the old link."
@@ -98,14 +98,14 @@ function sync {
 	elif [ -f "SYNC/$1/META/source" ]; then
 		read -r URL < "SYNC/$1/META/source"
 		if [ -f "SYNC/$1/META/cookies.txt" ]; then
-			COOKIE=( --cookies SYNC/$1/META/cookies.txt)
+			COOKIE=(--cookies "SYNC/$1/META/cookies.txt")
 		elif [ -f "cookies.txt" ]; then
-			COOKIE=( --cookies cookies.txt)
+			COOKIE=(--cookies cookies.txt)
 		else
 			COOKIE=()
 		fi
 		set_default_options "$1"
-		youtube-dl -i -f "$(cat "SYNC/$1/META/format")" --all-subs --embed-subs --download-archive "SYNC/$1/META/archive" "${COOKIE[@]}" --merge-output-format mkv -o "SYNC/$1/ID/%(id)s.mkv" "$URL"
+		youtube-dl -i -f "$(cat "SYNC/$1/META/format")" "${COOKIE[@]}" --all-subs --embed-subs --download-archive "SYNC/$1/META/archive" --merge-output-format mkv -o "SYNC/$1/ID/%(id)s.mkv" "$URL"
 	else
 		>&2 echo "Fatal error: Missing URL in profile '$1'."
 		exit 1
