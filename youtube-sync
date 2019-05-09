@@ -80,6 +80,21 @@ function update_all_metadata {
 	done
 }
 
+function delete_removed_files {
+	for file in SYNC/$1/META/*.title; do
+		filename=$(basename -- "$file")
+		filename="${filename%.*}"
+		if grep -q $filename "SYNC/$1/META/current_ids"; then
+			:
+		else
+			rm "$file"
+			rm "SYNC/$1/META/$filename.description"
+			rm "SYNC/$1/ID/$filename.mkv"
+		fi
+	done
+	update_symlinks $1
+}
+
 function set_default_option {
 	test -e "SYNC/$1/META/$2" || echo -n "$3" > "SYNC/$1/META/$2"
 }
@@ -106,6 +121,7 @@ function sync {
 		fi
 		set_default_options "$1"
 		youtube-dl -i -f "$(cat "SYNC/$1/META/format")" "${COOKIE[@]}" --all-subs --embed-subs --download-archive "SYNC/$1/META/archive" --merge-output-format mkv -o "SYNC/$1/ID/%(id)s.mkv" "$URL"
+		youtube-dl -j --flat-playlist "$URL" "${COOKIE[@]}" | jq -r '.id'  > SYNC/$1/META/current_ids
 	else
 		>&2 echo "Fatal error: Missing URL in profile '$1'."
 		exit 1
@@ -229,6 +245,13 @@ elif [ "$1" = "update" ]; then
 		exit 1
 	else
 		update "${@:2}"
+	fi
+elif [ "$1" = "update_deletes" ]; then
+	if [ -z "$2" ]; then
+		>&2 echo "Missing sync directory name."
+		exit 1
+	else
+		delete_removed_files "${@:2}"
 	fi
 elif [ "$1" = "update-old" ]; then
 	if [ -z "$2" ]; then
